@@ -1,4 +1,4 @@
-Disaster Box v0.1.0 (dev)
+Disaster Box v1.0.0 (release)
 ==============
 
 Client-sided mod that changes the Jester's windup music and adds a cool looping metal theme over it.<br>
@@ -26,7 +26,7 @@ For Devs
 * Assembly-CSharp.dll (From Lethal Company_Data/Managed)
 * UnityEngine.dll
 * Unity.Netcode.Runtime.dll
-* [LC_API](https://thunderstore.io/c/lethal-company/p/2018/LC_API/)
+* Uses LC_API.BundleAPI [LC_API](https://thunderstore.io/c/lethal-company/p/2018/LC_API/)
 * [GhoulMage.LethalCompany.dll](https://github.com/GhoulMage/GhoulMage.LethalCompany)
 <br>
 

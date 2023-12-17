@@ -5,6 +5,7 @@ using BepInEx.Configuration;
 using BepInEx.Logging;
 using GhoulMage.LethalCompany;
 using UnityEngine;
+using LC_API.BundleAPI;
 
 namespace DisasterBoxMod
 {
@@ -15,7 +16,7 @@ namespace DisasterBoxMod
     {
         public const string GUID = "ghoulmage.funny.disasterbox";
         public const string NAME = "Disaster Box";
-        public const string VERSION = "0.1.0";
+        public const string VERSION = "1.0.0";
 
         const string ConfigName = "DisasterBox";
 
@@ -38,7 +39,7 @@ namespace DisasterBoxMod
         {
             Log.LogInfo("Loading Disaster Box music...");
 
-            DisasterBox_Theme_Flat = LC_API.BundleAPI.BundleLoader.GetLoadedAsset<AudioClip>("Assets/letha/disasterbox_1.ogg");
+            DisasterBox_Theme_Flat = BundleLoader.GetLoadedAsset<AudioClip>("Assets/letha/disasterbox_1.ogg");
             if (DisasterBox_Theme_Flat == null)
             {
                 Log.LogError("Failed to load Disaster Box FLAT!");
@@ -46,7 +47,7 @@ namespace DisasterBoxMod
             }
             DisasterBox_Theme_Flat.LoadAudioData();
 
-            DisasterBox_Theme_PopUp = LC_API.BundleAPI.BundleLoader.GetLoadedAsset<AudioClip>("Assets/letha/disasterbox_2_popup.ogg");
+            DisasterBox_Theme_PopUp = BundleLoader.GetLoadedAsset<AudioClip>("Assets/letha/disasterbox_2_popup.ogg");
             if (DisasterBox_Theme_PopUp == null)
             {
                 Log.LogError("Failed to load Disaster Box Popup!");
@@ -54,7 +55,7 @@ namespace DisasterBoxMod
             }
             DisasterBox_Theme_PopUp.LoadAudioData();
 
-            DisasterBox_Theme_Loop = LC_API.BundleAPI.BundleLoader.GetLoadedAsset<AudioClip>("Assets/letha/disasterbox_2_loop.ogg");
+            DisasterBox_Theme_Loop = BundleLoader.GetLoadedAsset<AudioClip>("Assets/letha/disasterbox_2_loop.ogg");
             if (DisasterBox_Theme_Loop == null)
             {
                 Log.LogError("Failed to load Disaster Box Loop!");
@@ -70,9 +71,9 @@ namespace DisasterBoxMod
         }
         private static void GetConfig()
         {
-            LoopThemeIfBoxIsOpen = configFile.Bind<bool>(ConfigName, "Loop Theme", true, "Loops the metal part of the song as long as the box is open?");
-            LoopAudioRange = configFile.Bind<float>(ConfigName, "Loop Audio Range", 9.5f, "Audible range of the looping part.");
-            LoopVolume = configFile.Bind<float>(ConfigName, "Loop Volume", 0.65f, "Volume of the looping part, if enabled. Between 0 and 1.");
+            LoopThemeIfBoxIsOpen = configFile.Bind(ConfigName, "Loop Theme", true, "Loops the metal part of the song as long as the box is open?");
+            LoopAudioRange = configFile.Bind(ConfigName, "Loop Audio Range", 12.5f, "Audible range of the looping part.");
+            LoopVolume = configFile.Bind(ConfigName, "Loop Volume", 0.65f, "Volume of the looping part, if enabled. Between 0 and 1.");
         }
 
         protected override void Initialize()
@@ -82,21 +83,25 @@ namespace DisasterBoxMod
             Startup(GUID, NAME, VERSION, OnSuccesfulLoad);
         }
 
-        static void OnSuccesfulLoad()
+        private static void OnSuccesfulLoad()
         {
             GetConfig();
             LoadFromAssetBundle();
         }
     }
 
-    //Added when looping is enabled
-    internal class DisasterBoxLoopBehaviour : MonoBehaviour
+    /// <summary>
+    /// Added in a child GameObject when looping is enabled
+    /// </summary>
+    public class DisasterBoxLoopBehaviour : MonoBehaviour
     {
         AudioSource _audioSource;
 
         private void Awake()
         {
+#if DEBUG
             DisasterBoxMod_Plugin.Log.LogInfo("Creating AudioSource for DisasterBox Loop...");
+#endif
             _audioSource = gameObject.AddComponent<AudioSource>();
             _audioSource.playOnAwake = false;
             _audioSource.Stop();
@@ -105,12 +110,14 @@ namespace DisasterBoxMod
 
             float baseAudibleDistance = 0.5f + DisasterBoxMod_Plugin.LoopAudioRange.Value;
             _audioSource.maxDistance = baseAudibleDistance;
-            _audioSource.minDistance = baseAudibleDistance * 0.15f;
+            _audioSource.minDistance = baseAudibleDistance * 0.25f;
         }
 
         public void Play()
         {
+#if DEBUG
             DisasterBoxMod_Plugin.Log.LogInfo("Playing DisasterBox Loop!");
+#endif
             _audioSource.Stop();
             _audioSource.clip = DisasterBoxMod_Plugin.DisasterBox_Theme_Loop;
             _audioSource.volume = Mathf.Clamp01(DisasterBoxMod_Plugin.LoopVolume.Value);

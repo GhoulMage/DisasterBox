@@ -1,7 +1,5 @@
-using BepInEx;
 using HarmonyLib;
 using UnityEngine;
-using UnityEngine.AI;
 
 namespace DisasterBoxMod.Patch
 {
