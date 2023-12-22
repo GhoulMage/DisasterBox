@@ -1,22 +1,21 @@
-﻿using System;
-using System.Reflection;
+﻿using System.Reflection;
 using BepInEx;
+using BepInEx.Bootstrap;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using GhoulMage.LethalCompany;
 using UnityEngine;
-using LC_API.BundleAPI;
 
 namespace DisasterBoxMod
 {
     [BepInPlugin(GUID, NAME, VERSION)]
     [BepInProcess("Lethal Company.exe")]
-    [BepInDependency(LC_API.MyPluginInfo.PLUGIN_GUID)]
+    [BepInDependency(LC_API.MyPluginInfo.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     public class DisasterBoxMod_Plugin : GhoulMagePlugin
     {
         public const string GUID = "ghoulmage.funny.disasterbox";
         public const string NAME = "Disaster Box";
-        public const string VERSION = "1.0.0";
+        public const string VERSION = "1.1.0";
 
         const string ConfigName = "DisasterBox";
 
@@ -31,7 +30,7 @@ namespace DisasterBoxMod
         internal static AudioClip DisasterBox_Theme_PopUp;
         internal static AudioClip DisasterBox_Theme_Loop;
 
-        protected override LethalGameVersions GameCompatibility => new LethalGameVersions("v40", "v45");
+        protected override LethalGameVersions GameCompatibility => new LethalGameVersions("v40", "v45", "v47");
 
         protected override Assembly AssemblyToPatch => Assembly.GetExecutingAssembly();
 
@@ -39,7 +38,30 @@ namespace DisasterBoxMod
         {
             Log.LogInfo("Loading Disaster Box music...");
 
-            DisasterBox_Theme_Flat = BundleLoader.GetLoadedAsset<AudioClip>("Assets/letha/disasterbox_1.ogg");
+            if (LC_Info.HasLoadedMod("LC_API"))
+            {
+                System.Version lcVersion = Chainloader.PluginInfos["LC_API"].Metadata.Version;
+                switch (lcVersion.Major)
+                {
+                    case 3:
+                        BundleLoadVer3OrHigher();
+                        break;
+                    default:
+                        BundleLoadVersionUnder3();
+                        break;
+                }
+            }
+            else
+            {
+                BundleLoadVer3OrHigher();
+            }
+
+            Log.LogInfo("Disaster Box music loaded..!");
+        }
+
+        private static void BundleLoadVersionUnder3()
+        {
+            DisasterBox_Theme_Flat = LC_API.BundleAPI.BundleLoader.GetLoadedAsset<AudioClip>("Assets/letha/disasterbox_1.ogg");
             if (DisasterBox_Theme_Flat == null)
             {
                 Log.LogError("Failed to load Disaster Box FLAT!");
@@ -47,7 +69,7 @@ namespace DisasterBoxMod
             }
             DisasterBox_Theme_Flat.LoadAudioData();
 
-            DisasterBox_Theme_PopUp = BundleLoader.GetLoadedAsset<AudioClip>("Assets/letha/disasterbox_2_popup.ogg");
+            DisasterBox_Theme_PopUp = LC_API.BundleAPI.BundleLoader.GetLoadedAsset<AudioClip>("Assets/letha/disasterbox_2_popup.ogg");
             if (DisasterBox_Theme_PopUp == null)
             {
                 Log.LogError("Failed to load Disaster Box Popup!");
@@ -55,7 +77,7 @@ namespace DisasterBoxMod
             }
             DisasterBox_Theme_PopUp.LoadAudioData();
 
-            DisasterBox_Theme_Loop = BundleLoader.GetLoadedAsset<AudioClip>("Assets/letha/disasterbox_2_loop.ogg");
+            DisasterBox_Theme_Loop = LC_API.BundleAPI.BundleLoader.GetLoadedAsset<AudioClip>("Assets/letha/disasterbox_2_loop.ogg");
             if (DisasterBox_Theme_Loop == null)
             {
                 Log.LogError("Failed to load Disaster Box Loop!");
@@ -66,9 +88,40 @@ namespace DisasterBoxMod
                 Log.LogInfo("But looping is deactivated anyways so continuing...");
                 DisasterBox_Theme_Loop.LoadAudioData();
             }
-
-            Log.LogInfo("Disaster Box music loaded..!");
         }
+
+        private static void BundleLoadVer3OrHigher()
+        {
+            AssetBundle bundle = AssetBundle.LoadFromFile(Paths.PluginPath + "\\GhoulMage\\funny\\disasterbox");
+            DisasterBox_Theme_Flat = bundle.LoadAsset<AudioClip>("Assets/letha/disasterbox_1.ogg");
+            if (DisasterBox_Theme_Flat == null)
+            {
+                Log.LogError("Failed to load Disaster Box FLAT!");
+                return;
+            }
+            DisasterBox_Theme_Flat.LoadAudioData();
+
+            DisasterBox_Theme_PopUp = bundle.LoadAsset<AudioClip>("Assets/letha/disasterbox_2_popup.ogg");
+            if (DisasterBox_Theme_PopUp == null)
+            {
+                Log.LogError("Failed to load Disaster Box Popup!");
+                return;
+            }
+            DisasterBox_Theme_PopUp.LoadAudioData();
+
+            DisasterBox_Theme_Loop = bundle.LoadAsset<AudioClip>("Assets/letha/disasterbox_2_loop.ogg");
+            if (DisasterBox_Theme_Loop == null)
+            {
+                Log.LogError("Failed to load Disaster Box Loop!");
+
+                if (LoopThemeIfBoxIsOpen.Value)
+                    return;
+
+                Log.LogInfo("But looping is deactivated anyways so continuing...");
+                DisasterBox_Theme_Loop.LoadAudioData();
+            }
+        }
+
         private static void GetConfig()
         {
             LoopThemeIfBoxIsOpen = configFile.Bind(ConfigName, "Loop Theme", true, "Loops the metal part of the song as long as the box is open?");
